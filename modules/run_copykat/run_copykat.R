@@ -32,11 +32,22 @@ if (is.null(opt$h5ad)) {
 # AnnData stores X as (cells × genes); copykat expects (genes × cells).
 anndata    <- import("anndata")
 ad         <- anndata$read_h5ad(opt$h5ad)
-x          <- ad$X
-if (py_has_attr(x, "toarray")) x <- x$toarray()   # handle sparse storage
+
+# reticulate may auto-convert scipy sparse → dgCMatrix or numpy dense → R matrix
+# before we see it; only call Python methods if it is still a Python object.
+x <- ad$X
+if (inherits(x, "python.builtin.object")) {
+    if (py_has_attr(x, "toarray")) x <- x$toarray()
+}
 expression <- t(as.matrix(x))
-rownames(expression) <- as.character(ad$var_names$to_list())
-colnames(expression) <- as.character(ad$obs_names$to_list())
+
+# pandas Index may or may not be auto-converted to R character vector
+var_names <- ad$var_names
+obs_names <- ad$obs_names
+if (inherits(var_names, "python.builtin.object")) var_names <- var_names$tolist()
+if (inherits(obs_names, "python.builtin.object")) obs_names <- obs_names$tolist()
+rownames(expression) <- as.character(var_names)
+colnames(expression) <- as.character(obs_names)
 
 # CopyKAT writes all output files to the working directory using sam.name as
 # a prefix, so change into out_dir before running.
