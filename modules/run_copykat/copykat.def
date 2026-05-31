@@ -1,0 +1,28 @@
+Bootstrap: docker
+From: rocker/r-ver:4.4.0
+
+%post
+    apt-get update && apt-get install -y --no-install-recommends \
+        libcurl4-openssl-dev \
+        libssl-dev \
+        libxml2-dev \
+        libhdf5-dev \
+        libfontconfig1-dev \
+        libfreetype6-dev \
+        libpng-dev \
+        python3 \
+        python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+    Rscript -e 'install.packages(
+        c("BiocManager", "remotes", "optparse", "Matrix"),
+        repos="https://cran.r-project.org", quiet=TRUE)'
+
+    Rscript -e 'BiocManager::install(
+        c("zellkonverter", "SummarizedExperiment"), ask=FALSE, quiet=TRUE)'
+
+    Rscript -e 'remotes::install_github("navinlabcode/copykat")'
+
+%labels
+    Author Austin Varela
+    Version 1.0.0
