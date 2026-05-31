@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - r-base=4.4
+  - r-base=4.6
   - r-remotes
   - bioconductor-zellkonverter
   - bioconductor-summarizedexperiment

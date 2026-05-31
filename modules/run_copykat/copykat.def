@@ -1,36 +1,23 @@
 Bootstrap: docker
-From: rocker/r-ver:4.4.0
+From: bioconductor/bioconductor_docker:RELEASE_3_23-R-4.6.0
 
 %environment
-    # Tell basilisk to use the Python env baked into the container image
-    # rather than trying to create one in a read-only filesystem at runtime.
+    # Use the Python environment baked into the image at build time so
+    # basilisk does not try to download/create a conda env at runtime.
     export BASILISK_USE_SYSTEM_DIR=1
 
 %post
-    apt-get update && apt-get install -y --no-install-recommends \
-        libcurl4-openssl-dev \
-        libssl-dev \
-        libxml2-dev \
-        libhdf5-dev \
-        libfontconfig1-dev \
-        libfreetype6-dev \
-        libpng-dev \
-        python3 \
-        python3-pip \
-        python3-dev \
-    && rm -rf /var/lib/apt/lists/*
+    Rscript -e 'install.packages(c("optparse", "remotes"), repos="https://cran.r-project.org")'
 
-    Rscript -e 'install.packages(
-        c("BiocManager", "remotes", "optparse", "Matrix"),
-        repos="https://cran.r-project.org")'
-
-    Rscript -e 'BiocManager::install(
-        c("zellkonverter", "SummarizedExperiment"), ask=FALSE)'
+    Rscript -e '
+        BiocManager::install("zellkonverter", ask=FALSE)
+        if (!requireNamespace("zellkonverter", quietly=TRUE)) stop("zellkonverter install failed")
+    '
 
     Rscript -e 'remotes::install_github("navinlabcode/copykat")'
 
-    # Pre-build the basilisk/Python environment for zellkonverter so it is
-    # baked into the image and does not need network access at runtime.
+    # Pre-build the basilisk/Python environment inside the image so it is
+    # available read-only at runtime on compute nodes without internet.
     BASILISK_USE_SYSTEM_DIR=1 Rscript -e '
         library(basilisk)
         library(zellkonverter)
@@ -39,7 +26,7 @@ From: rocker/r-ver:4.4.0
         cat("basilisk environment ready\n")
     '
 
-    # Verify all packages load cleanly; fails the build if anything is missing.
+    # Smoke-test every library that run_copykat.R uses.
     Rscript -e '
         library(optparse)
         library(Matrix)

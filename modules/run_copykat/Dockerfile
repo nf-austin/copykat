@@ -1,24 +1,10 @@
-FROM rocker/r-ver:4.4.0
+FROM bioconductor/bioconductor_docker:RELEASE_3_23-R-4.6.0
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libcurl4-openssl-dev \
-    libssl-dev \
-    libxml2-dev \
-    libhdf5-dev \
-    libfontconfig1-dev \
-    libfreetype6-dev \
-    libpng-dev \
-    python3 \
-    python3-pip \
-    python3-dev \
-    && rm -rf /var/lib/apt/lists/*
+RUN Rscript -e 'install.packages(c("optparse", "remotes"), repos="https://cran.r-project.org")'
 
-RUN Rscript -e 'install.packages( \
-        c("BiocManager", "remotes", "optparse", "Matrix"), \
-        repos="https://cran.r-project.org")'
-
-RUN Rscript -e 'BiocManager::install( \
-        c("zellkonverter", "SummarizedExperiment"), ask=FALSE)'
+RUN Rscript -e ' \
+    BiocManager::install("zellkonverter", ask=FALSE); \
+    if (!requireNamespace("zellkonverter", quietly=TRUE)) stop("zellkonverter install failed")'
 
 RUN Rscript -e 'remotes::install_github("navinlabcode/copykat")'
 
