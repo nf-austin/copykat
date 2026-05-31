@@ -5,7 +5,7 @@ RUN python3 -m venv /opt/r-venv && \
 
 ENV RETICULATE_PYTHON=/opt/r-venv/bin/python3
 
-RUN Rscript -e 'install.packages(c("optparse", "remotes"), repos="https://cran.r-project.org")'
+RUN Rscript -e 'install.packages(c("optparse", "remotes", "reticulate"), repos="https://cran.r-project.org")'
 
 RUN Rscript -e 'remotes::install_github("navinlabcode/copykat")'
 

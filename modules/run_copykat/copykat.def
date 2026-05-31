@@ -8,7 +8,7 @@ From: bioconductor/bioconductor_docker:RELEASE_3_23-R-4.6.0
     python3 -m venv /opt/r-venv
     /opt/r-venv/bin/pip install --no-cache-dir anndata
 
-    Rscript -e 'install.packages(c("optparse", "remotes"), repos="https://cran.r-project.org")'
+    Rscript -e 'install.packages(c("optparse", "remotes", "reticulate"), repos="https://cran.r-project.org")'
 
     Rscript -e 'remotes::install_github("navinlabcode/copykat")'
 
