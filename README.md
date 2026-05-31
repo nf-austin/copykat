@@ -13,24 +13,25 @@ A Nextflow DSL2 pipeline for copy-number variation inference from single-cell RN
 - Nextflow >= 24.04.0
 - Singularity (recommended for HPC), Docker, or Conda
 
-## Singularity setup (required for `r-copykat`)
+## Singularity image
 
-The `RUN_COPYKAT` process uses a local Singularity image because `copykat` is not packaged on conda-forge or Bioconda — it must be installed from [GitHub](https://github.com/navinlabcode/copykat). Build the image once before running the pipeline:
+The `RUN_COPYKAT` process uses a local Singularity image because `copykat` is not packaged on conda-forge or Bioconda — it must be installed from [GitHub](https://github.com/navinlabcode/copykat).
+
+The pipeline builds the image automatically on the first run via a `BUILD_COPYKAT_SIF` step. Subsequent runs skip the build if the image already exists at `params.copykat_sif`.
+
+`BUILD_COPYKAT_SIF` uses `singularity build --fakeroot`. If your HPC does not support `--fakeroot`, build the image manually and copy it to the expected path:
 
 ```bash
+# Option A: build with fakeroot (most HPC clusters)
 singularity build --fakeroot modules/run_copykat/run_copykat.sif modules/run_copykat/copykat.def
-```
 
-If `--fakeroot` is unavailable (e.g. your HPC does not allow it), build the image on a machine where you have root or Docker, then copy it to the cluster:
-
-```bash
-# On a machine with Docker + Singularity
+# Option B: build from Docker on a machine where you have root
 docker build -t copykat-nf modules/run_copykat/
 singularity build run_copykat.sif docker-daemon://copykat-nf:latest
 scp run_copykat.sif <cluster>:<project_dir>/modules/run_copykat/
 ```
 
-The pipeline defaults to `${projectDir}/modules/run_copykat/run_copykat.sif`. Override with:
+The default image path is `${projectDir}/modules/run_copykat/run_copykat.sif`. Override with:
 
 ```bash
 --copykat_sif /path/to/run_copykat.sif
