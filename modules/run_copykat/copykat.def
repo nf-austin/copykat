@@ -2,7 +2,7 @@ Bootstrap: docker
 From: bioconductor/bioconductor_docker:RELEASE_3_23-R-4.6.0
 
 %post
-    pip3 install --no-cache-dir anndata
+    pip3 install --no-cache-dir --break-system-packages anndata
 
     Rscript -e 'install.packages(c("optparse", "remotes"), repos="https://cran.r-project.org")'
 
