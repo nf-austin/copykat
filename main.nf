@@ -28,6 +28,7 @@ workflow {
 
     RUN_COPYKAT(
         ch_gated,
+        Channel.value(file("${projectDir}/modules/run_copykat/run_copykat.R")),
         params.id_type,
         params.cell_line,
         params.ngene_chr,

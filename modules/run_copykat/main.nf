@@ -7,6 +7,7 @@ process RUN_COPYKAT {
 
     input:
     tuple val(sample_id), path(h5ad)
+    path   run_script
     val id_type
     val cell_line
     val ngene_chr
@@ -23,7 +24,7 @@ process RUN_COPYKAT {
     script:
     """
     mkdir -p copykat_out
-    Rscript ${moduleDir}/run_copykat.R \\
+    Rscript ${run_script} \\
         --h5ad ${h5ad} \\
         --id_type ${id_type} \\
         --cell_line ${cell_line} \\
