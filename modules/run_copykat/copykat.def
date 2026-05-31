@@ -1,38 +1,21 @@
 Bootstrap: docker
 From: bioconductor/bioconductor_docker:RELEASE_3_23-R-4.6.0
 
-%environment
-    # Use the Python environment baked into the image at build time so
-    # basilisk does not try to download/create a conda env at runtime.
-    export BASILISK_USE_SYSTEM_DIR=1
-
 %post
-    Rscript -e 'install.packages(c("optparse", "remotes"), repos="https://cran.r-project.org")'
+    pip3 install --no-cache-dir anndata
 
-    Rscript -e '
-        BiocManager::install("zellkonverter", ask=FALSE)
-        if (!requireNamespace("zellkonverter", quietly=TRUE)) stop("zellkonverter install failed")
-    '
+    Rscript -e 'install.packages(c("optparse", "remotes"), repos="https://cran.r-project.org")'
 
     Rscript -e 'remotes::install_github("navinlabcode/copykat")'
 
-    # Pre-build the basilisk/Python environment inside the image so it is
-    # available read-only at runtime on compute nodes without internet.
-    BASILISK_USE_SYSTEM_DIR=1 Rscript -e '
-        library(basilisk)
-        library(zellkonverter)
-        proc <- basilisk::basiliskStart(zellkonverterAnnDataEnv())
-        basilisk::basiliskStop(proc)
-        cat("basilisk environment ready\n")
-    '
-
     # Smoke-test every library that run_copykat.R uses.
     Rscript -e '
+        library(reticulate)
         library(optparse)
         library(Matrix)
-        library(SummarizedExperiment)
-        library(zellkonverter)
         library(copykat)
+        anndata <- import("anndata")
+        cat("anndata version:", anndata$`__version__`, "\n")
         cat("All packages OK\n")
     '
 

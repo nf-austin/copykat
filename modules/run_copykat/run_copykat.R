@@ -1,8 +1,7 @@
 #!/usr/bin/env Rscript
 library(optparse)
 library(copykat)
-library(zellkonverter)
-library(SummarizedExperiment)
+library(reticulate)
 library(Matrix)
 
 option_list <- list(
@@ -29,10 +28,15 @@ if (is.null(opt$h5ad)) {
     stop("Missing required arguments.", call.=FALSE)
 }
 
-adata      <- readH5AD(opt$h5ad)
-# zellkonverter names the primary assay based on adata.uns['X_name'] — grab
-# the first assay rather than a hardcoded name.
-expression <- as.matrix(assays(adata)[[1]])
+# Read H5AD via Python anndata — avoids zellkonverter's basilisk/conda management.
+# AnnData stores X as (cells × genes); copykat expects (genes × cells).
+anndata    <- import("anndata")
+ad         <- anndata$read_h5ad(opt$h5ad)
+x          <- ad$X
+if (py_has_attr(x, "toarray")) x <- x$toarray()   # handle sparse storage
+expression <- t(as.matrix(x))
+rownames(expression) <- as.character(ad$var_names$to_list())
+colnames(expression) <- as.character(ad$obs_names$to_list())
 
 # CopyKAT writes all output files to the working directory using sam.name as
 # a prefix, so change into out_dir before running.

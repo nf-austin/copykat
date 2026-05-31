@@ -4,8 +4,8 @@ channels:
   - bioconda
 dependencies:
   - r-base=4.6
+  - r-reticulate
   - r-remotes
-  - bioconductor-zellkonverter
-  - bioconductor-summarizedexperiment
   - r-optparse
   - r-matrix
+  - anndata
