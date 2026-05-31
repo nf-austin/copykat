@@ -1,15 +1,19 @@
 Bootstrap: docker
 From: bioconductor/bioconductor_docker:RELEASE_3_23-R-4.6.0
 
+%environment
+    export RETICULATE_PYTHON=/opt/r-venv/bin/python3
+
 %post
-    pip3 install --no-cache-dir --break-system-packages anndata
+    python3 -m venv /opt/r-venv
+    /opt/r-venv/bin/pip install --no-cache-dir anndata
 
     Rscript -e 'install.packages(c("optparse", "remotes"), repos="https://cran.r-project.org")'
 
     Rscript -e 'remotes::install_github("navinlabcode/copykat")'
 
     # Smoke-test every library that run_copykat.R uses.
-    Rscript -e '
+    RETICULATE_PYTHON=/opt/r-venv/bin/python3 Rscript -e '
         library(reticulate)
         library(optparse)
         library(Matrix)

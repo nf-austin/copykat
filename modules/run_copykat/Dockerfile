@@ -1,6 +1,9 @@
 FROM bioconductor/bioconductor_docker:RELEASE_3_23-R-4.6.0
 
-RUN pip3 install --no-cache-dir --break-system-packages anndata
+RUN python3 -m venv /opt/r-venv && \
+    /opt/r-venv/bin/pip install --no-cache-dir anndata
+
+ENV RETICULATE_PYTHON=/opt/r-venv/bin/python3
 
 RUN Rscript -e 'install.packages(c("optparse", "remotes"), repos="https://cran.r-project.org")'
 
