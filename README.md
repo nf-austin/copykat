@@ -11,13 +11,36 @@ A Nextflow DSL2 pipeline for copy-number variation inference from single-cell RN
 ## Requirements
 
 - Nextflow >= 24.04.0
-- Docker, Singularity, or Conda
+- Singularity (recommended for HPC), Docker, or Conda
+
+## Singularity setup (required for `r-copykat`)
+
+The `RUN_COPYKAT` process uses a local Singularity image because `copykat` is not packaged on conda-forge or Bioconda — it must be installed from [GitHub](https://github.com/navinlabcode/copykat). Build the image once before running the pipeline:
+
+```bash
+singularity build --fakeroot modules/run_copykat/run_copykat.sif modules/run_copykat/copykat.def
+```
+
+If `--fakeroot` is unavailable (e.g. your HPC does not allow it), build the image on a machine where you have root or Docker, then copy it to the cluster:
+
+```bash
+# On a machine with Docker + Singularity
+docker build -t copykat-nf modules/run_copykat/
+singularity build run_copykat.sif docker-daemon://copykat-nf:latest
+scp run_copykat.sif <cluster>:<project_dir>/modules/run_copykat/
+```
+
+The pipeline defaults to `${projectDir}/modules/run_copykat/run_copykat.sif`. Override with:
+
+```bash
+--copykat_sif /path/to/run_copykat.sif
+```
 
 ## Usage
 
 ```bash
 nextflow run nf-austin/copykat \
-    -profile conda \
+    -profile singularity \
     --h5ad_dir "data/*.h5ad"
 ```
 
@@ -25,10 +48,9 @@ Override any parameter on the command line:
 
 ```bash
 nextflow run nf-austin/copykat \
-    -profile conda \
+    -profile singularity \
     --h5ad_dir "data/*.h5ad" \
     --id_type E \
-    --resolution 0.5 \
     --outdir my_results
 ```
 
@@ -38,6 +60,7 @@ nextflow run nf-austin/copykat \
 | --- | --- | --- |
 | `--h5ad_dir` | `data/*.h5ad` | Glob pattern for input h5ad files. |
 | `--outdir` | `results` | Output directory. |
+| `--copykat_sif` | `${projectDir}/modules/run_copykat/run_copykat.sif` | Path to the local Singularity image for `RUN_COPYKAT`. |
 | `--id_type` | `S` | Gene ID type passed to CopyKAT: `S` for gene symbols, `E` for Ensembl IDs. |
 | `--cell_line` | `no` | Set to `yes` for cell-line data (disables normal-cell inference). |
 | `--ngene_chr` | `5` | Minimum number of genes per chromosome required by CopyKAT. |

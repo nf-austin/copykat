@@ -2,6 +2,7 @@ process RUN_COPYKAT {
     tag { sample_id }
     publishDir { "${params.outdir}/${sample_id}_copykat" }, mode: 'copy'
 
+    container params.copykat_sif
     conda "${moduleDir}/environment.yml"
 
     input:
