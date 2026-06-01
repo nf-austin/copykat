@@ -31,7 +31,9 @@ singularity build run_copykat.sif docker-daemon://copykat-nf:latest
 scp run_copykat.sif <cluster>:<project_dir>/modules/run_copykat/
 ```
 
-The default image path is `${projectDir}/modules/run_copykat/run_copykat.sif`. Override with:
+The default image path is `~/.nextflow/singularity/nf-austin-copykat/run_copykat.sif`. Storing it in `$HOME` ensures the image survives pipeline updates — each `nextflow run` pull creates a new commit-specific clone directory, so placing the SIF inside the project would require a rebuild every update.
+
+Override with:
 
 ```bash
 --copykat_sif /path/to/run_copykat.sif
