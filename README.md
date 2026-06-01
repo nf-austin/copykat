@@ -5,7 +5,7 @@ A Nextflow DSL2 pipeline for copy-number variation inference from single-cell RN
 ## Pipeline steps
 
 1. **RUN_COPYKAT** (`copykat`) — Runs CopyKAT on the raw count matrix, automatically inferring diploid reference cells. Predicts aneuploid/diploid status per cell and produces a CNA matrix. Outputs are published to `results/<sample>_copykat/`.
-2. **ANNOTATE_H5AD** (`scanpy`, `pandas`) — Injects `copykat_prediction` (aneuploid/diploid/not.defined) and `cnv_diversity_index` (mean squared deviation from diploid baseline, a CIN proxy) into each sample's h5ad.
+2. **ANNOTATE_H5AD** (`scanpy`, `pandas`) — Injects `copykat_prediction` (aneuploid/diploid/not.defined) and `cnv_diversity_index` (Shannon diversity index over CNV states loss/neutral/gain per cell, thresholds ±0.2) into each sample's h5ad.
 3. **CONCAT_H5ADS** (`anndata`) — Concatenates all annotated h5ads into a single `combined_annotated.h5ad`, deduplicating barcodes across samples.
 
 ## Requirements
