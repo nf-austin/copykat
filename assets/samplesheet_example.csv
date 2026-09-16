@@ -1,0 +1,4 @@
+sample,h5ad
+tumor01,/data/tumor01/tumor01.h5ad
+tumor02,/data/tumor02/tumor02.h5ad
+normal01,/data/normal01/normal01.h5ad

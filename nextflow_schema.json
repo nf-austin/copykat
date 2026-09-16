@@ -1,0 +1,266 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "https://raw.githubusercontent.com/nf-austin/copykat/main/nextflow_schema.json",
+  "title": "nf-austin/copykat pipeline parameters",
+  "description": "Automated CopyKAT pipeline with clustering, ploidy prediction, CIN scoring, and matrix concatenation",
+  "type": "object",
+  "definitions": {
+    "input_output_options": {
+      "title": "Input/output options",
+      "type": "object",
+      "fa_icon": "fas fa-terminal",
+      "description": "Where the count matrices come from and where results go.",
+      "required": [
+        "outdir"
+      ],
+      "properties": {
+        "input": {
+          "type": "string",
+          "format": "file-path",
+          "exists": true,
+          "schema": "assets/schema_input.json",
+          "mimetype": "text/csv",
+          "pattern": "^\\S+\\.(csv|tsv|txt)$",
+          "fa_icon": "fas fa-file-csv",
+          "description": "Samplesheet CSV listing the samples to run.",
+          "help_text": "Columns: `sample` and `h5ad`. One row per sample; `sample` becomes the output subdirectory name and must be unique. Use this rather than `--h5ad_dir` when launching from Seqera Platform, where a samplesheet gets a file browser. Mutually exclusive with `--h5ad_dir`."
+        },
+        "h5ad_dir": {
+          "type": "string",
+          "fa_icon": "fas fa-folder",
+          "description": "Ad-hoc alternative to a samplesheet: a glob matching .h5ad files, e.g. 'data/*.h5ad'.",
+          "help_text": "The sample id is taken from each filename with any trailing `_annotated` stripped. Convenient on the command line; prefer `--input` on Seqera Platform. Mutually exclusive with `--input`."
+        },
+        "outdir": {
+          "type": "string",
+          "default": "results",
+          "format": "directory-path",
+          "fa_icon": "fas fa-folder-open",
+          "description": "Output directory. Use an absolute path on a cluster or on cloud storage."
+        }
+      }
+    },
+    "copykat_options": {
+      "title": "CopyKAT options",
+      "type": "object",
+      "fa_icon": "fas fa-dna",
+      "description": "How CopyKAT segments and calls ploidy.",
+      "properties": {
+        "genome": {
+          "type": "string",
+          "default": "hg20",
+          "enum": [
+            "hg20",
+            "hg19",
+            "mm10"
+          ],
+          "fa_icon": "fas fa-globe",
+          "description": "Genome assembly. `hg20` is hg38."
+        },
+        "id_type": {
+          "type": "string",
+          "default": "S",
+          "enum": [
+            "S",
+            "E"
+          ],
+          "fa_icon": "fas fa-tag",
+          "description": "Gene identifier type: `S` for gene symbols, `E` for Ensembl IDs.",
+          "help_text": "Must match the `var_names` of your .h5ad. Getting this wrong makes CopyKAT drop nearly every gene."
+        },
+        "cell_line": {
+          "type": "string",
+          "default": "no",
+          "enum": [
+            "no",
+            "yes"
+          ],
+          "fa_icon": "fas fa-flask",
+          "description": "Set `yes` for cell lines, `no` for primary tissue.",
+          "help_text": "Cell-line mode skips the search for a diploid baseline population, which a pure cell line does not have."
+        },
+        "ngene_chr": {
+          "type": "integer",
+          "default": 5,
+          "fa_icon": "fas fa-filter",
+          "description": "Minimum genes per chromosome for a cell to be kept."
+        },
+        "win_size": {
+          "type": "integer",
+          "default": 25,
+          "fa_icon": "fas fa-window-maximize",
+          "description": "Minimum window size, in genes, for segmentation.",
+          "help_text": "Smaller windows detect focal events but are noisier. Values below 15 are not recommended upstream."
+        },
+        "ks_cut": {
+          "type": "number",
+          "default": 0.1,
+          "fa_icon": "fas fa-cut",
+          "description": "KS-statistic cutoff for segmentation sensitivity.",
+          "help_text": "Lower is more sensitive. Ranges 0 to 0.15; raise it if the run finds no aneuploid cells at all."
+        },
+        "low_dr": {
+          "type": "number",
+          "default": 0.05,
+          "fa_icon": "fas fa-arrow-down",
+          "description": "Lower bound of the dynamic range smoothing filter.",
+          "hidden": true
+        },
+        "up_dr": {
+          "type": "number",
+          "default": 0.1,
+          "fa_icon": "fas fa-arrow-up",
+          "description": "Upper bound of the dynamic range smoothing filter. Must be >= low_dr.",
+          "hidden": true
+        },
+        "distance": {
+          "type": "string",
+          "default": "euclidean",
+          "enum": [
+            "euclidean",
+            "pearson",
+            "spearman"
+          ],
+          "fa_icon": "fas fa-ruler",
+          "description": "Distance metric used for clustering.",
+          "hidden": true
+        }
+      }
+    },
+    "container_options": {
+      "title": "Container options",
+      "type": "object",
+      "fa_icon": "fas fa-cubes",
+      "description": "Which images the processes run in.",
+      "properties": {
+        "copykat_container": {
+          "type": "string",
+          "default": "ghcr.io/nf-austin/copykat:1.0.0",
+          "fa_icon": "fas fa-box",
+          "description": "R/Bioconductor image carrying CopyKAT, used by RUN_COPYKAT.",
+          "hidden": true
+        },
+        "copykat_py_container": {
+          "type": "string",
+          "default": "ghcr.io/nf-austin/copykat:1.0.0-py",
+          "fa_icon": "fas fa-box",
+          "description": "Python/scanpy image used by ANNOTATE_H5AD and CONCAT_H5ADS.",
+          "hidden": true
+        }
+      }
+    },
+    "execution_options": {
+      "title": "Execution environment",
+      "type": "object",
+      "fa_icon": "fas fa-server",
+      "description": "Cluster scheduler, image caches and bind mounts. Relevant when running on HPC.",
+      "help_text": "Use the `slurm` profile together with an engine profile: `-profile slurm,singularity`. On Seqera Platform a SLURM compute environment already sets the executor, so you normally only need the cache and bind settings here.",
+      "properties": {
+        "slurm_queue": {
+          "type": "string",
+          "fa_icon": "fas fa-stream",
+          "description": "SLURM partition to submit to (sbatch --partition).",
+          "help_text": "Only used with `-profile slurm`. Left unset, no --partition flag is emitted and the cluster default applies."
+        },
+        "slurm_account": {
+          "type": "string",
+          "fa_icon": "fas fa-id-card",
+          "description": "SLURM account to charge (sbatch --account).",
+          "hidden": true
+        },
+        "cluster_options": {
+          "type": "string",
+          "fa_icon": "fas fa-sliders-h",
+          "description": "Raw sbatch options appended to every job, e.g. '--qos=long'.",
+          "hidden": true
+        },
+        "singularity_cache_dir": {
+          "type": "string",
+          "format": "directory-path",
+          "fa_icon": "fas fa-hdd",
+          "description": "Shared directory for pulled Singularity images.",
+          "help_text": "Put this on shared storage the compute nodes can read. $HOME is quota-limited and is not always mounted on compute nodes. Defaults to NXF_SINGULARITY_CACHEDIR, then Nextflow's own $NXF_HOME location."
+        },
+        "conda_cache_dir": {
+          "type": "string",
+          "format": "directory-path",
+          "fa_icon": "fas fa-hdd",
+          "description": "Shared directory for created conda environments.",
+          "hidden": true
+        },
+        "singularity_bind": {
+          "type": "string",
+          "fa_icon": "fas fa-link",
+          "description": "Extra paths to bind into the container, comma-separated, e.g. '/mnt/gpfs,/scratch'.",
+          "help_text": "autoMounts only binds paths Nextflow itself resolved. HPC filesystems are routinely symlinked (/data -> /mnt/gpfs/...), which shows up as 'file not found' inside the container even though the host path exists. Bind the real parent here."
+        }
+      }
+    },
+    "max_job_request_options": {
+      "title": "Maximum job request options",
+      "type": "object",
+      "fa_icon": "fab fa-acquisitions-incorporated",
+      "description": "Caps applied to every process.",
+      "help_text": "RUN_COPYKAT requests 16 CPUs by default. On a small machine lower `--max_cpus`, or the task cannot be submitted at all.",
+      "properties": {
+        "max_cpus": {
+          "type": "integer",
+          "default": 32,
+          "fa_icon": "fas fa-microchip",
+          "description": "Maximum CPUs for any single job.",
+          "hidden": true
+        },
+        "max_memory": {
+          "type": "string",
+          "default": "128.GB",
+          "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
+          "fa_icon": "fas fa-memory",
+          "description": "Maximum memory for any single job.",
+          "hidden": true
+        },
+        "max_time": {
+          "type": "string",
+          "default": "72.h",
+          "pattern": "^(\\d+\\.?\\s*(s|m|h|d|day)\\s*)+$",
+          "fa_icon": "far fa-clock",
+          "description": "Maximum time for any single job.",
+          "hidden": true
+        }
+      }
+    },
+    "generic_options": {
+      "title": "Generic options",
+      "type": "object",
+      "fa_icon": "fas fa-file-import",
+      "description": "Rarely changed.",
+      "properties": {
+        "help": {
+          "type": "boolean",
+          "fa_icon": "fas fa-question-circle",
+          "description": "Print the help message and exit.",
+          "hidden": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/definitions/input_output_options"
+    },
+    {
+      "$ref": "#/definitions/copykat_options"
+    },
+    {
+      "$ref": "#/definitions/container_options"
+    },
+    {
+      "$ref": "#/definitions/execution_options"
+    },
+    {
+      "$ref": "#/definitions/max_job_request_options"
+    },
+    {
+      "$ref": "#/definitions/generic_options"
+    }
+  ]
+}

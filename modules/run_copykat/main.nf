@@ -2,9 +2,17 @@ process RUN_COPYKAT {
     tag { sample_id }
     publishDir { "${params.outdir}/${sample_id}_copykat" }, mode: 'copy'
 
-    container params.copykat_sif
+    // No `conda` directive on purpose: CopyKAT is not packaged on conda-forge or
+    // Bioconda -- it installs from GitHub -- so environment.yml here cannot
+    // provide it and `-profile conda` cannot run this process. It resolves
+    // through the container only. The environment.yml is kept as the record of
+    // the surrounding R stack that the image is built on.
+    container params.copykat_container
 
     input:
+    // The script is staged as a path input rather than referenced via
+    // ${moduleDir}: moduleDir is not bind-mounted into the container, so a
+    // moduleDir reference is a file-not-found under -profile docker/singularity.
     tuple val(sample_id), path(h5ad)
     path   run_script
     val id_type
@@ -37,5 +45,22 @@ process RUN_COPYKAT {
         --threads ${task.cpus} \\
         --out_dir copykat_out \\
         --sample_name ${sample_id}
+    """
+
+    // Lets `nextflow run ... -stub-run` exercise channel wiring and fan-out
+    // without pulling the image or running CopyKAT. Filenames must stay in sync
+    // with the output: block above.
+    stub:
+    """
+    mkdir -p copykat_out
+    # These are the real CopyKAT filenames: annotate_h5ad.py globs for
+    # *_copykat_prediction.txt and *_copykat_CNA_raw_results_gene_by_cell.txt,
+    # so a stub that emits different names would pass here and break the
+    # downstream step on real data.
+    echo 'cell.names\tcopykat.pred' > copykat_out/${sample_id}_copykat_prediction.txt
+    echo 'hgnc_symbol\tchromosome_name' > copykat_out/${sample_id}_copykat_CNA_raw_results_gene_by_cell.txt
+    echo 'chrom\tchrompos\tabspos' > copykat_out/${sample_id}_copykat_CNA_results.txt
+    touch copykat_out/${sample_id}_copykat_heatmap.jpeg
+    touch copykat_out/${sample_id}_copykat_result.rds
     """
 }

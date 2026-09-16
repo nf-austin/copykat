@@ -1,0 +1,16 @@
+# Files surfaced in the Seqera Platform "Reports" tab after a run.
+reports:
+  combined_annotated.h5ad:
+    display: "All samples concatenated, annotated with CopyKAT calls"
+  "**/*_copykat_prediction.txt":
+    display: "Per-sample aneuploid/diploid cell predictions"
+  "**/*_copykat_CNA_results.txt":
+    display: "Per-sample copy number estimates per genomic bin"
+  "**/*_copykat_CNA_raw_results_gene_by_cell.txt":
+    display: "Per-sample raw gene-by-cell copy number matrix"
+  "**/*_copykat_heatmap.jpeg":
+    display: "Per-sample CNV heatmap"
+  "pipeline_info/execution_report.html":
+    display: "Nextflow execution report (resources, timings, task status)"
+  "pipeline_info/execution_timeline.html":
+    display: "Nextflow execution timeline"
