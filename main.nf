@@ -128,7 +128,6 @@ workflow {
 
     RUN_COPYKAT(
         ch_samples,
-        channel.value(file("${projectDir}/modules/run_copykat/run_copykat.R")),
         params.id_type,
         params.cell_line,
         params.ngene_chr,
@@ -143,8 +142,7 @@ workflow {
     ch_annotate_in = ch_samples.join(RUN_COPYKAT.out.copykat_dir)
 
     ANNOTATE_H5AD(
-        ch_annotate_in,
-        channel.value(file("${projectDir}/modules/annotate_h5ad/annotate_h5ad.py"))
+        ch_annotate_in
     )
 
     ANNOTATE_H5AD.out.h5ad
@@ -153,7 +151,6 @@ workflow {
         | set { ch_all_h5ads }
 
     CONCAT_H5ADS(
-        ch_all_h5ads,
-        channel.value(file("${projectDir}/modules/concat_h5ads/concat_h5ads.py"))
+        ch_all_h5ads
     )
 }

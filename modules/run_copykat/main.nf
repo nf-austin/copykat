@@ -10,11 +10,7 @@ process RUN_COPYKAT {
     container params.copykat_container
 
     input:
-    // The script is staged as a path input rather than referenced via
-    // ${moduleDir}: moduleDir is not bind-mounted into the container, so a
-    // moduleDir reference is a file-not-found under -profile docker/singularity.
     tuple val(sample_id), path(h5ad)
-    path   run_script
     val id_type
     val cell_line
     val ngene_chr
@@ -29,9 +25,12 @@ process RUN_COPYKAT {
     tuple val(sample_id), path("copykat_out"), emit: copykat_dir
 
     script:
+    // Scripts live in bin/ and are called bare: Nextflow prepends
+    // $projectDir/bin to PATH and bind-mounts it into the container, so this
+    // works under docker, singularity and conda alike.
     """
     mkdir -p copykat_out
-    Rscript ${run_script} \\
+    run_copykat.R \\
         --h5ad ${h5ad} \\
         --id_type ${id_type} \\
         --cell_line ${cell_line} \\
